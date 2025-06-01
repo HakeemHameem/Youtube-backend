@@ -50,7 +50,7 @@ const userSchema = new Schema({
 {timestamps : true}
 );
 
-userSchema.pre("save", async function (next) {   // for saving and excryption of the password using preHook
+userSchema.pre("save", async function (next) {   // for saving and encryption of the password using preHook
     if(!this.isModified("password"))return next();
     this.password = bcrypt.hash(this.password , 10)
     next();
@@ -75,7 +75,10 @@ userSchema.methods.generateAccessToken = function(){
 }
 
 userSchema.methods.generateRefreshToken = function(){ //contains less info LIKE ONLY id
-     jwt.sign({
+ // we can generate n number of access tokens from refresh tokens because access tokens are temeprory and for shoter peroid of time
+ // in order to get access from the API server but it expires after some time so we can generate more access token
+ /// from the refresh Tokens when access tokens expires 
+    jwt.sign({
         _id : this._id,
     },
     process.env.REFRESH_TOKEN_SECRET,{

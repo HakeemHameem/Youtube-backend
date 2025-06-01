@@ -19,6 +19,20 @@ app.use(express.static("public")) // ham isse apne videos or photos ko serve kar
 app.use(cookieParser()) // it helps us to read cookies sent by the browser
 
 
+//Routes import
+
+import userRouter from './routes/user.routes.js'
+
+
+//Routes decleration
+
+app.use("/api/v1/users" , userRouter)
+
+// https://localhost:8000/api/v1/users/register
+
+
+
+
 
 
 
