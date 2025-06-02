@@ -17,7 +17,7 @@ build frontends. */
 
 
 
-class ApiError extends error{
+class ApiError extends Error{
 
     constructor(
        statusCode,  // e.g., 404, 500 — HTTP status codes

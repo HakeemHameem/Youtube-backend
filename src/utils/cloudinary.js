@@ -42,7 +42,8 @@ import fs from "fs"
 // "auto" means it figures out the type of file (image, video, etc.) automatically.
             })
             //file has been uploaded successfuly
-            console.log("File is Uploaded on Cloudinary", response.url);
+            // console.log("File is Uploaded on Cloudinary", response.url);
+            fs.unlinkSync(localFilePath)
             return response;
         } catch(error){
             fs.unlinkSync(localFilePath) // remove the locally saved temperory file  as the upload operation got failed
