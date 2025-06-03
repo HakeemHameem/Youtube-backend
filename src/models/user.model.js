@@ -78,6 +78,8 @@ userSchema.methods.generateRefreshToken = function(){ //contains less info LIKE 
  // we can generate n number of access tokens from refresh tokens because access tokens are temeprory and for shoter peroid of time
  // in order to get access from the API server but it expires after some time so we can generate more access token
  /// from the refresh Tokens when access tokens expires 
+ // refresh token is saved in user database and on server as well if both the token matches then new refresh token is given
+ //mainly access token is like movie ticket and refresh token is like membership and we dont have to give give password again and again 
     jwt.sign({
         _id : this._id,
     },
