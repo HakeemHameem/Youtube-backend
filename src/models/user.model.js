@@ -57,12 +57,12 @@ userSchema.pre("save", async function (next) {   // for saving and encryption of
 })
 
 userSchema.methods.isPasswordCorrect = async function(password){
-   await bcrypt.compare(password,this.password) // It gives either password is coorect or not??
+   return await bcrypt.compare(password,this.password) // It gives either password is coorect or not??
 
 }
 
 userSchema.methods.generateAccessToken = function(){
-    jwt.sign({
+    return jwt.sign({
         _id : this._id,
         email:this.email,
         username:this.username,
@@ -80,7 +80,7 @@ userSchema.methods.generateRefreshToken = function(){ //contains less info LIKE 
  /// from the refresh Tokens when access tokens expires 
  // refresh token is saved in user database and on server as well if both the token matches then new refresh token is given
  //mainly access token is like movie ticket and refresh token is like membership and we dont have to give give password again and again 
-    jwt.sign({
+    return jwt.sign({
         _id : this._id,
     },
     process.env.REFRESH_TOKEN_SECRET,{
