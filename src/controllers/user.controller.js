@@ -4,6 +4,7 @@ import {User} from "../models/user.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 import jwt from "jsonwebtoken"
+import { upload } from "../middlewares/multer.middleware.js"
 
 // method for refresh and access tokens
 
@@ -29,7 +30,7 @@ const generateAccessAndRefreshToken = async (userId)=>{
 
 
 //** Register User **
-    const registerUser = asyncHandler (async (req , res)=>{
+const registerUser = asyncHandler (async (req , res)=>{
  // ALOGORITM FOR REGISTER USER!!!!!!!!     
     //get user details from frontend
     //validation -not empty
@@ -94,8 +95,20 @@ const generateAccessAndRefreshToken = async (userId)=>{
     if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length >0){
         coverImageLocalPath = req.files.coverImage[0].path
     }
+   
+   // 1. Checks if 'req.files' exists (i.e., files were uploaded)
+  // 2. Checks if 'coverImage' field exists and is an array
+ // 3. Checks if the array is not empty
+  /*
+Example Context:
+If you're using a middleware like multer for handling file uploads in Node.js (Express), and a user uploads
+a file with the form field name coverImage, the file will be available in req.files.coverImage,
+typically as an array of file objects.
+
+ */
 
 
+  
     if(!avatarLocalPath){
         throw new ApiError(400 , "Avatar File is required")
     }
@@ -146,7 +159,7 @@ const generateAccessAndRefreshToken = async (userId)=>{
     )
 
 
-    }) 
+}) 
 
 //** Login User **
    const loginUser = asyncHandler(async (req, res) => {
@@ -295,7 +308,94 @@ const refrestAccessToken = asyncHandler(async(req , res)=>{
 
 })
 
+
+const ChangeCurrentPassword = asyncHandler(async(req,res)=>{
+    const {oldPassword , newPassword} = req.body
+
+    const user = await User.findById(req.user?._id)
+    const isPasswordVerified = user.isPasswordCorrect(oldPassword)
+
+    if(!isPasswordVerified){
+        throw new ApiError(400 , "Invalid old password") 
+    }
+
+    user.password = newPassword
+    await user.save({validateBeforeSave : false})
+
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200 ,{},"Password Changed Successfully"))
+})
+
+
+const getCurrentUser = asyncHandler(async(req,res)=>{ // get the current user as in middleware we have already injected that user in req.body so its very easy for us to get the user
+    return res
+    .status(200)
+    .json(200 , req.user,"Current User Fetched Successfully!")
+})
+
+const updateAccountDetails = asyncHandler(async(req,res)=>{
+    const {email , fullname} = req.body
+
+    if(!email || !fullname){
+        throw new ApiError(400 , "All fields are required")
+    }
+
+    const Updateduser = User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set : {
+                fullname,
+                email
+            }
+        },
+        {new : true}
+    ).select("-password")
+    return res.
+    status(200)
+    .json(new ApiResponse(200, Updateduser , "Account details updated successfully" ))
+})
+
+
+const updateUserAvatar = asyncHandler(async(req , res)=>{
+
+    const avatarLocalPath = req.file?.path
+
+    if(!avatarLocalPath){
+        throw new ApiError(400 , "Avatar file is missing")
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+    if(!avatar.url){
+         throw new ApiError(400 , "Error while uploading updated avatar")
+
+    }
+
+    await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set : {
+                avatar : avatar.url
+            }
+
+        },
+        {
+           new : true
+        }
+    ).select("-password")
+
+
+})
+
+
+
 export {registerUser, 
         loginUser,
         logoutUser,
-        refrestAccessToken}
+        refrestAccessToken,
+        ChangeCurrentPassword,
+        getCurrentUser,
+        updateAccountDetails,
+        updateUserAvatar }
