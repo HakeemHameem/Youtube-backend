@@ -5,6 +5,7 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 import jwt from "jsonwebtoken"
 import { upload } from "../middlewares/multer.middleware.js"
+import { use } from "react"
 
 // method for refresh and access tokens
 
@@ -308,7 +309,7 @@ const refrestAccessToken = asyncHandler(async(req , res)=>{
 
 })
 
-
+//change passoword of user
 const ChangeCurrentPassword = asyncHandler(async(req,res)=>{
     const {oldPassword , newPassword} = req.body
 
@@ -328,13 +329,14 @@ const ChangeCurrentPassword = asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200 ,{},"Password Changed Successfully"))
 })
 
-
+//get the current user changing the account settings
 const getCurrentUser = asyncHandler(async(req,res)=>{ // get the current user as in middleware we have already injected that user in req.body so its very easy for us to get the user
     return res
     .status(200)
     .json(200 , req.user,"Current User Fetched Successfully!")
 })
 
+//update users account details
 const updateAccountDetails = asyncHandler(async(req,res)=>{
     const {email , fullname} = req.body
 
@@ -357,7 +359,7 @@ const updateAccountDetails = asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200, Updateduser , "Account details updated successfully" ))
 })
 
-
+// avatar
 const updateUserAvatar = asyncHandler(async(req , res)=>{
 
     const avatarLocalPath = req.file?.path
@@ -373,7 +375,7 @@ const updateUserAvatar = asyncHandler(async(req , res)=>{
 
     }
 
-    await User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set : {
@@ -386,7 +388,48 @@ const updateUserAvatar = asyncHandler(async(req , res)=>{
         }
     ).select("-password")
 
+     return res
+    .status(200)
+    .json(
+        new ApiResponse(200 , user , "Avatar Updated Successfully")
+    )
+})
 
+// coverImage
+
+const updateUserCoverImage = asyncHandler(async(req , res)=>{
+
+    const CoverImageLocalPath = req.file?.path
+
+    if(!CoverImageLocalPath){
+        throw new ApiError(400 , "CoverImage file is missing")
+    }
+
+    const CoverImage = await uploadOnCloudinary(CoverImageLocalPath)
+
+    if(!CoverImage.url){
+         throw new ApiError(400 , "Error while uploading updated CoverImage")
+
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set : {
+                CoverImage : CoverImage.url
+            }
+
+        },
+        {
+           new : true
+        }
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200 , user , "Cover Image Updated Successfully")
+    )
 })
 
 
@@ -398,4 +441,5 @@ export {registerUser,
         ChangeCurrentPassword,
         getCurrentUser,
         updateAccountDetails,
-        updateUserAvatar }
+        updateUserAvatar,
+        updateUserCoverImage}
