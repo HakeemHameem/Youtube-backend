@@ -4,8 +4,7 @@ import {User} from "../models/user.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 import jwt from "jsonwebtoken"
-import { upload } from "../middlewares/multer.middleware.js"
-import { use } from "react"
+
 
 // method for refresh and access tokens
 
@@ -27,8 +26,6 @@ const generateAccessAndRefreshToken = async (userId)=>{
         
     }
 }
-
-
 
 //** Register User **
 const registerUser = asyncHandler (async (req , res)=>{
@@ -390,9 +387,11 @@ const updateUserAvatar = asyncHandler(async(req , res)=>{
 
      return res
     .status(200)
-    .json(
+    .json( 
         new ApiResponse(200 , user , "Avatar Updated Successfully")
     )
+
+    // delete the old image
 })
 
 // coverImage
@@ -432,6 +431,94 @@ const updateUserCoverImage = asyncHandler(async(req , res)=>{
     )
 })
 
+//aggregation pipelines
+//get a users channel through url
+const getUserChannelProfile = asyncHandler(async(req,res)=>{
+    const {username} = req.params
+
+    if(!username?.trim()){
+        throw new ApiError(400 , "Username is missing")
+    }
+    
+    //check for the user in database
+
+    const channel = await User.aggregate([
+        {
+        $match:{
+            username : username?.toLowerCase()
+        }
+        },
+        { //subscribers pata lagane hai
+            $lookup : {
+                from : "subscriptions",   // subscription.model.js sai laaya maine ye db mai saara plural mai hojata hai aur lowercase mai
+                localField : "_id",
+                foreignField : "channel",  // jab subscribers pata lagane hai tab channel sai pata lagao we have dicussed it
+                as : "subscribers"  
+            }
+        },
+        //kitno ko subscribe kiya hai wo bhi pata lagana hai
+        {
+            $lookup : {
+                from : "subscriptions",
+                localField : "_id",
+                foreignField : "subscriber",
+                as : "subscribedTo"
+            }
+
+        },
+        {
+            $addFields : {
+                subscribersCount: {
+                    $size : "$subscribers"
+                },
+                
+                channelSubscribedToCount : {
+                        $size : "$subscribedTo"
+                },
+                //user is subscribed or not?
+                isSubscribed : {
+                    $cond : {
+                        if : {$in : [req.user?._id , "$subscribers.subscriber"]},
+                        then : true,
+                        else : false
+                    }
+                }
+                
+            }
+        },
+        //abh ham url mai selected cheezay denge saara nai dainge
+        {
+            $project : {
+                fullname : 1,
+                username : 1,
+                subscribersCount : 1,
+                channelSubscribedToCount : 1,
+                isSubscribed : 1,
+                avatar : 1,
+                coverImage : 1,
+                email : 1
+            }
+
+        }
+
+  ])
+   
+  if(!channel?.length){
+    throw new ApiError(400 , "Channel does not exist")
+
+  }
+
+
+  return res
+  .status(200)
+  .json(
+    new ApiResponse(200 , channel[0] , " Channel Fetched Successfully")
+  )
+
+})
+
+
+
 
 
 export {registerUser, 
@@ -442,4 +529,5 @@ export {registerUser,
         getCurrentUser,
         updateAccountDetails,
         updateUserAvatar,
-        updateUserCoverImage}
+        updateUserCoverImage,
+        getUserChannelProfile}
