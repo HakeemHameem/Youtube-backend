@@ -4,7 +4,7 @@ import {User} from "../models/user.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 import jwt from "jsonwebtoken"
-import mongoose, { Mongoose } from "mongoose"
+import mongoose from "mongoose"
 
 
 // method for refresh and access tokens
