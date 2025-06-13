@@ -53,8 +53,25 @@ import fs from "fs"
         }
     }
 
+    const deleteOnCloudinary = async(public_id , resource_type="image")=>{
+        try {
+            if(!public_id) return null;
+            const result = cloudinary.uploader.destroy(public_id,{
+                resource_type
+            })
+            return result;
+            
+        } catch (error) {
+            console.log("Delete on Cloudinary Failed",error)
+            throw error;
+        }
+
+    }
 
 
 
 
-   export {uploadOnCloudinary}
+
+   export {uploadOnCloudinary,
+           deleteOnCloudinary
+          }
