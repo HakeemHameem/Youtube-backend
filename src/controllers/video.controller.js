@@ -149,6 +149,56 @@ So you get:
 const publishAVideo = asyncHandler(async (req, res) => {
     const { title, description} = req.body
     // TODO: get video, upload to cloudinary, create video
+    if([title,description].some((field)=>field.trim()==="")){
+        throw new ApiError(400,"All fields are required")
+    }
+    const VideoFileLocalPath=req.files?.videoFile[0].path;
+    const thumbnailFileLocalPath=req.files?.thumbnail[0].path;
+    
+    if(!VideoFileLocalPath){
+        throw new ApiError(400 , "VideoLocalPath is required")
+    }
+    if(!thumbnailFileLocalPath){
+        throw new ApiError(400 , "thumbnailLocalPath is required")
+    }
+
+    const videoFile = await uploadOnCloudinary(VideoFileLocalPath)
+    const thumbnail = await uploadOnCloudinary(thumbnailFileLocalPath)
+    
+    
+    if(!videoFile){
+        throw new ApiError(400,"video file not found")
+    }
+    if (!thumbnail) {
+        throw new ApiError(400, "Thumbnail not found");
+    }
+
+    const video = await Video.create({
+        title,
+        description,
+        duration:videoFile.duration,
+        videoFile:{
+            url:videoFile.url,
+            public_id:videoFile.public_id
+        },
+        thumbnail:{
+            url:thumbnail.url,
+            public_id:thumbnail.public_id
+        },
+        owner : req.user?._id,
+        isPublished:false
+    });
+
+    const videoUploaded = await Video.findById(video._id)
+     if (!videoUploaded) {
+        throw new ApiError(500, "videoUpload failed please try again !!!");
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video uploaded successfully"));
+
+
 })
 
 const getVideoById = asyncHandler(async (req, res) => {
